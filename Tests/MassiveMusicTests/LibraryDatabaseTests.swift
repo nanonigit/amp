@@ -438,13 +438,14 @@ struct LibraryDatabaseTests {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let source = try String(contentsOf: repository.appending(path: "Sources/MassiveMusic/ContentView.swift"))
+        let insights = try String(contentsOf: repository.appending(path: "Sources/MassiveMusic/IdleListeningInsightsView.swift"))
         let inspectorStart = try #require(source.range(of: "private struct NowPlayingInspector: View"))
         let inspectorEnd = try #require(source.range(of: "private struct CurrentTrackInfoEditorView: View", range: inspectorStart.upperBound..<source.endIndex))
         let inspector = String(source[inspectorStart.lowerBound..<inspectorEnd.lowerBound])
 
         #expect(inspector.contains("if player.currentTrack == nil"))
         #expect(inspector.contains("idleDiscovery"))
-        #expect(inspector.contains("再生停止中"))
+        #expect(insights.contains("再生停止中"))
     }
 
     @Test func inspectorChordTabSearchesChordifyForTheCurrentTrack() throws {
