@@ -3572,6 +3572,7 @@ private struct InspectorDivider: View {
 private struct NowPlayingInspector: View {
     @ObservedObject var model: LibraryViewModel
     @ObservedObject var player: PlaybackController
+    @ObservedObject private var progress: PlaybackController.Progress
     @Binding var isMiniPlayer: Bool
     @Binding var browserURL: URL?
     let openAISettings: () -> Void
@@ -3581,6 +3582,15 @@ private struct NowPlayingInspector: View {
     @AppStorage("discovery.displayCount") private var discoveryDisplayCount = 15
     @State private var isEditingManualLyrics = false
     @State private var tabSearchInstrument = "guitar"
+
+    init(model: LibraryViewModel, player: PlaybackController, isMiniPlayer: Binding<Bool>, browserURL: Binding<URL?>, openAISettings: @escaping () -> Void) {
+        self.model = model
+        self.player = player
+        self._progress = ObservedObject(wrappedValue: player.progress)
+        self._isMiniPlayer = isMiniPlayer
+        self._browserURL = browserURL
+        self.openAISettings = openAISettings
+    }
 
     private struct DisplayLyricLine: Identifiable {
         let id: Int
@@ -7493,9 +7503,18 @@ private struct InspectorPlayerControls: View {
 private struct UnifiedPlayerControls: View {
     @ObservedObject var player: PlaybackController
     @ObservedObject var model: LibraryViewModel
+    @ObservedObject private var progress: PlaybackController.Progress
     @Binding var isMiniPlayer: Bool
     let isCompact: Bool
     @State private var isVolumePopoverPresented = false
+
+    init(player: PlaybackController, model: LibraryViewModel, isMiniPlayer: Binding<Bool>, isCompact: Bool) {
+        self.player = player
+        self.model = model
+        self._progress = ObservedObject(wrappedValue: player.progress)
+        self._isMiniPlayer = isMiniPlayer
+        self.isCompact = isCompact
+    }
 
     var body: some View {
         ViewThatFits(in: .horizontal) {

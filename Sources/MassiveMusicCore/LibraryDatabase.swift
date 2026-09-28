@@ -3339,12 +3339,12 @@ public final class LibraryDatabase: @unchecked Sendable {
 
     private static func metadataIssuePredicate(_ kind: MetadataIssueKind, field: MetadataField? = nil) -> String {
         let metadataText = switch field {
-        case .title: "t.title"
-        case .artist: "t.artist"
-        case .album: "t.album"
-        case .genre: "t.genre"
-        case .comment: "t.comment"
-        case nil: "t.title || ' ' || t.artist || ' ' || t.album || ' ' || t.album_artist || ' ' || t.genre || ' ' || t.comment || ' ' || t.filename || ' ' || t.relative_path"
+        case .title: "COALESCE(t.title, '')"
+        case .artist: "COALESCE(t.artist, '')"
+        case .album: "COALESCE(t.album, '')"
+        case .genre: "COALESCE(t.genre, '')"
+        case .comment: "COALESCE(t.comment, '')"
+        case nil: "COALESCE(t.title, '') || ' ' || COALESCE(t.artist, '') || ' ' || COALESCE(t.album, '') || ' ' || COALESCE(t.album_artist, '') || ' ' || COALESCE(t.genre, '') || ' ' || COALESCE(t.comment, '') || ' ' || COALESCE(t.filename, '') || ' ' || COALESCE(t.relative_path, '')"
         }
         return switch kind {
         case .missingTitle: "trim(t.title) = ''"

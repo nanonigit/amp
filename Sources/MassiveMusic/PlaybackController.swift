@@ -12,10 +12,36 @@ final class PlaybackController: ObservableObject {
         case all = "全体リピート"
     }
 
+    @MainActor
+    final class Progress: ObservableObject {
+        @Published var elapsed: Double = 0
+        @Published var duration: Double = 0
+
+        init(elapsed: Double = 0, duration: Double = 0) {
+            self.elapsed = elapsed
+            self.duration = duration
+        }
+    }
+
+    let progress = Progress()
+
+    var elapsed: Double {
+        get { progress.elapsed }
+        set { progress.elapsed = newValue }
+    }
+
+    var duration: Double {
+        get { progress.duration }
+        set { progress.duration = newValue }
+    }
+
     @Published private(set) var currentTrack: Track?
-    @Published private(set) var isPlaying = false
-    @Published private(set) var elapsed: Double = 0
-    @Published private(set) var duration: Double = 0
+    @Published private(set) var isPlaying = false {
+        didSet {
+            guard oldValue != isPlaying else { return }
+            updatePracticeTimerState()
+        }
+    }
     @Published var volume: Double = 0.8 {
         didSet {
             let normalizedVolume = Float(max(0, min(1, volume)))
@@ -32,7 +58,12 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var queueTotalCount = 0
     @Published private(set) var queueOffset = 0
     @Published private(set) var playbackSpeed: Double
-    @Published private(set) var pitchSemitones: Int
+    @Published private(set) var pitchSemitones: Int {
+        didSet {
+            guard oldValue != pitchSemitones else { return }
+            updatePracticeTimerState()
+        }
+    }
     @Published private(set) var sectionLoopStart: Double?
     @Published private(set) var sectionLoopEnd: Double?
     @Published private(set) var isSectionLoopEnabled = false
@@ -93,14 +124,12 @@ final class PlaybackController: ObservableObject {
                 let seconds = time.seconds.isFinite ? max(0, time.seconds) : 0
                 if self.restartSectionLoopIfNeeded(at: seconds) { return }
                 self.elapsed = seconds
-                self.isPlaying = self.player.rate > 0
+                let ratePlaying = self.player.rate > 0
+                if self.isPlaying != ratePlaying {
+                    self.isPlaying = ratePlaying
+                }
             }
         }
-        practiceTimer = Timer.publish(every: 0.1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                MainActor.assumeIsolated { self?.updateEnginePlaybackState() }
-            }
         endObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: nil,
@@ -776,7 +805,24 @@ final class PlaybackController: ObservableObject {
         let seconds = min(duration, max(0, Double(frame) / file.processingFormat.sampleRate))
         if restartSectionLoopIfNeeded(at: seconds) { return }
         elapsed = seconds
-        isPlaying = audioNode.isPlaying
+        let nodePlaying = audioNode.isPlaying
+        if isPlaying != nodePlaying {
+            isPlaying = nodePlaying
+        }
+    }
+
+    private func updatePracticeTimerState() {
+        if pitchSemitones != 0 && isPlaying {
+            guard practiceTimer == nil else { return }
+            practiceTimer = Timer.publish(every: 0.1, on: .main, in: .common)
+                .autoconnect()
+                .sink { [weak self] _ in
+                    MainActor.assumeIsolated { self?.updateEnginePlaybackState() }
+                }
+        } else {
+            practiceTimer?.cancel()
+            practiceTimer = nil
+        }
     }
 
     private func restartSectionLoopIfNeeded(at seconds: Double) -> Bool {

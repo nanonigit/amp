@@ -565,7 +565,7 @@ struct LibraryDatabaseTests {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let source = try String(contentsOf: repository.appending(path: "Sources/MassiveMusic/ContentView.swift"))
-        let albumStart = try #require(source.range(of: "private var albumSummaryTable: some View"))
+        let albumStart = try #require(source.range(of: "private func albumColumnCell"))
         let albumEnd = try #require(source.range(of: "private var albumSummaryGrid: some View", range: albumStart.upperBound..<source.endIndex))
         let albumTable = String(source[albumStart.lowerBound..<albumEnd.lowerBound])
 
@@ -1091,7 +1091,7 @@ struct LibraryDatabaseTests {
         let diagnostics = String(source[start.lowerBound..<end.lowerBound])
 
         #expect(diagnostics.contains("HStack(spacing: 6)"))
-        #expect(diagnostics.contains(".frame(minWidth: 132, alignment: .leading)"))
+        #expect(diagnostics.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(diagnostics.contains(".padding(.horizontal, 9)"))
         #expect(diagnostics.contains(".padding(.vertical, 7)"))
         #expect(diagnostics.contains(".padding(8)"))
@@ -1661,7 +1661,7 @@ struct LibraryDatabaseTests {
 
     @Test func migrationEnablesExpectedSchemaAndWAL() throws {
         let context = try TestContext()
-        #expect(try context.database.schemaVersion() == 12)
+        #expect(try context.database.schemaVersion() == 14)
         #expect(try context.database.journalMode().lowercased() == "wal")
     }
 
@@ -1690,7 +1690,7 @@ struct LibraryDatabaseTests {
         let end = try #require(content.range(of: "private struct LibrarySettingsView", range: start.upperBound..<content.endIndex))
         let editor = String(content[start.lowerBound..<end.lowerBound])
 
-        #expect(editor.contains("GroupBox(model.text(\"変更する曲情報\""))
+        #expect(editor.contains("GroupBox(model.text(\"基本情報\""))
         #expect(editor.contains("Button(model.text(\"保存\", \"Save\")"))
         #expect(editor.contains("model.updateMetadata(for: tracks, changes:"))
         #expect(!editor.contains(".toggleStyle(.checkbox)"))

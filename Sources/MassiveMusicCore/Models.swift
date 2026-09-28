@@ -1292,6 +1292,10 @@ public enum GenreNormalizer {
     }
 
     private static func normalizedSeparators(_ value: String) -> String {
+        let lower = value.lowercased()
+        if lower.contains("://") || lower.contains("http:") || lower.contains("https:") || lower.contains("www.") {
+            return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         var normalized = value.precomposedStringWithCompatibilityMapping
             .replacingOccurrences(of: "・", with: " ")
             .replacingOccurrences(of: "／", with: " ")
