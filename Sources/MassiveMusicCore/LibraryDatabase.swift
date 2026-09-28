@@ -21,7 +21,8 @@ public final class LibraryDatabase: @unchecked Sendable {
         configuration.busyMode = .timeout(5)
         configuration.prepareDatabase { db in
             try db.execute(sql: "PRAGMA foreign_keys = ON")
-            try db.execute(sql: "PRAGMA cache_size = -32768")
+            try db.execute(sql: "PRAGMA cache_size = -65536")
+            try db.execute(sql: "PRAGMA mmap_size = 268435456")
             try db.execute(sql: "PRAGMA temp_store = MEMORY")
             db.add(function: DatabaseFunction("REGEXP", argumentCount: 2, pure: true) { values in
                 guard let pattern = String.fromDatabaseValue(values[0]),
@@ -183,6 +184,12 @@ public final class LibraryDatabase: @unchecked Sendable {
     public func schemaVersion() throws -> Int {
         try pool.read { db in
             try Int.fetchOne(db, sql: "SELECT MAX(version) FROM schema_migrations") ?? 0
+        }
+    }
+
+    public func optimize() throws {
+        try pool.writeWithoutTransaction { db in
+            try db.execute(sql: "PRAGMA optimize")
         }
     }
 
